@@ -1,0 +1,6 @@
+{
+  "name": "Mohammed Albayati - Nature Photo Gallery",
+  "description": "Personal nature photo gallery of Mohammed Albayati (Born August 23, 2011) featuring mountains, forests, wildlife, and natural landscapes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
