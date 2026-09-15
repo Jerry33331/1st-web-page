@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Camera, Calendar, Check, ChevronLeft, ChevronRight, Download, Heart, Info, MapPin, Share2, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Camera, Calendar, Check, ChevronLeft, ChevronRight, Download, Heart, Info, MapPin, Pencil, Share2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { Photo } from '../types';
 
 interface LightboxProps {
@@ -7,14 +7,17 @@ interface LightboxProps {
   photos: Photo[];
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
+  onUpdateDescription: (id: string, description: string) => void;
   onClose: () => void;
   onSelectPhoto: (photo: Photo) => void;
 }
 
-export function Lightbox({ photo, photos, isFavorite, onToggleFavorite, onClose, onSelectPhoto }: LightboxProps) {
+export function Lightbox({ photo, photos, isFavorite, onToggleFavorite, onUpdateDescription, onClose, onSelectPhoto }: LightboxProps) {
   const [copied, setCopied] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const [showInfo, setShowInfo] = useState(true);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [draftDescription, setDraftDescription] = useState('');
   const currentIndex = photo ? photos.findIndex((item) => item.id === photo.id) : -1;
   const prevPhoto = photo && photos.length > 0 ? (currentIndex > 0 ? photos[currentIndex - 1] : photos[photos.length - 1]) : null;
   const nextPhoto = photo && photos.length > 0 ? (currentIndex < photos.length - 1 ? photos[currentIndex + 1] : photos[0]) : null;
@@ -32,6 +35,8 @@ export function Lightbox({ photo, photos, isFavorite, onToggleFavorite, onClose,
 
   useEffect(() => {
     setZoomed(false);
+    setIsEditingDescription(false);
+    setDraftDescription(photo?.description ?? '');
   }, [photo?.id]);
 
   useEffect(() => {
@@ -62,6 +67,13 @@ export function Lightbox({ photo, photos, isFavorite, onToggleFavorite, onClose,
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleSaveDescription = () => {
+    const nextDescription = draftDescription.trim();
+    if (!nextDescription) return;
+    onUpdateDescription(photo.id, nextDescription);
+    setIsEditingDescription(false);
   };
 
   return (
@@ -96,8 +108,59 @@ export function Lightbox({ photo, photos, isFavorite, onToggleFavorite, onClose,
             </div>
             <h2 data-testid={`text-lightbox-title-${photo.id}`} className="font-serif text-xl font-bold tracking-wide text-white sm:text-2xl md:text-3xl">{photo.title}</h2>
             <div className="mt-2 max-w-2xl">
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400">About this photo</p>
-              <p data-testid={`text-lightbox-description-${photo.id}`} className="text-sm leading-relaxed text-stone-200 sm:text-base">{photo.description || 'A beautiful moment captured in the natural world.'}</p>
+              <div className="mb-1 flex items-center gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400">About this photo</p>
+                {!isEditingDescription && <span className="text-[10px] text-stone-500">Click to edit</span>}
+              </div>
+              {isEditingDescription ? (
+                <div className="space-y-2">
+                  <textarea
+                    data-testid={`input-lightbox-description-${photo.id}`}
+                    value={draftDescription}
+                    onChange={(event) => setDraftDescription(event.target.value)}
+                    autoFocus
+                    rows={3}
+                    className="w-full resize-y rounded-lg border border-emerald-600/70 bg-stone-900/90 px-3 py-2 text-sm leading-relaxed text-white outline-none ring-2 ring-emerald-500/20 sm:text-base"
+                    aria-label="Edit photo description"
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      data-testid="button-save-description"
+                      type="button"
+                      onClick={handleSaveDescription}
+                      disabled={!draftDescription.trim()}
+                      className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Save description
+                    </button>
+                    <button
+                      data-testid="button-cancel-description"
+                      type="button"
+                      onClick={() => {
+                        setDraftDescription(photo.description);
+                        setIsEditingDescription(false);
+                      }}
+                      className="rounded-md border border-stone-700 px-3 py-1.5 text-xs font-semibold text-stone-300 transition-colors hover:bg-stone-800 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  data-testid={`button-edit-description-${photo.id}`}
+                  type="button"
+                  onClick={() => {
+                    setDraftDescription(photo.description);
+                    setIsEditingDescription(true);
+                  }}
+                  className="group/description flex w-full items-start gap-2 text-left text-sm leading-relaxed text-stone-200 transition-colors hover:text-white sm:text-base"
+                  title="Click to edit this description"
+                >
+                  <span data-testid={`text-lightbox-description-${photo.id}`}>{photo.description || 'A beautiful moment captured in the natural world.'}</span>
+                  <Pencil className="mt-1 h-3.5 w-3.5 shrink-0 text-stone-500 opacity-0 transition-opacity group-hover/description:opacity-100" />
+                </button>
+              )}
             </div>
           </div>
           {photo.cameraDetails && <div className="hidden min-w-[220px] rounded-lg border border-stone-800 bg-stone-900/90 p-3 text-xs text-stone-300 md:block">
